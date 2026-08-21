@@ -1,0 +1,13 @@
+# ============================================================================
+# deepseek-balance-glass-panel —— DSH bundle patch（挂载声明）
+# ============================================================================
+# DSH 启动时按 bundle 层栈叠加各插件 patch，本文件把玻璃余额面板插入 Web profile。
+#
+# 安装方式：
+#   本地开发： dsh plugin --profile web add link:<本目录绝对路径>
+#   发布后：   dsh plugin --profile web add deepseek-balance-glass-panel
+# ============================================================================
+
+- insert:
+    - id: deepseek-balance-glass-panel
+      name: deepseek-balance-glass-panel

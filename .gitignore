@@ -1,0 +1,14 @@
+# 依赖
+node_modules/
+
+# 日志与临时文件
+*.log
+*.tmp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 本地记账/记忆文件（属于用户 ~/.dsh，不属于本仓库）
+.dsh-glass-usage.json
+.dshw-usage.json

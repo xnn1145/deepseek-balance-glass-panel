@@ -1,0 +1,92 @@
+# DSH 余额面板（DeepSeek Balance Panel）
+
+DeepSeek Harness（DSH）Web 界面上的浮动 **macOS 风格毛玻璃面板**：DeepSeek 余额、今日/本次会话花销（峰谷拆分）、Token 用量与当前任务，随页面打开自动出现。本项目是标准 DSH 插件包，可通过 `dsh plugin` 安装/卸载。
+
+## 功能
+
+- 💰 **余额**：调用 `api.deepseek.com/user/balance`（`DEEPSEEK_API_KEY`），30 秒缓存 + 手动刷新；接口失败时回退为「最近观测余额」并给出提示，不直接报错
+- 📊 **今日会话花销（余额记账法）**：与余额同一把 `DEEPSEEK_API_KEY`——每次观测余额后按**差值自动记账**（持久化到 `~/.dsh/.dsh-glass-usage.json`，跨天自动归零归档）；若检测到小鲸鱼挂件（`dsh-whale-widget`）的记账文件，则无缝接续其当日累计值
+- 🧾 **本次会话花销**：按会话事件实时统计，拆分为 **高峰时期用量 / 空闲时间用量**
+- 🕐 **峰谷时段**：高峰 = 北京时间 9:00–12:00 与 14:00–18:00；底部红/绿点显示「现在是 梁文峰 / 梁文谷 时间」
+- 🪙 **Token 用量**：本次对话的 缓存命中 / 未命中 / 输出
+- 📝 **任务**：持久显示最后一次 `todo_write` 的清单（跨轮次保留，不随 turn 清空），无清单时回退到当前 goal
+- 🎨 **macOS 风玻璃**：红黄绿三键（刷新/最小化/关闭）、浅色/深色自动跟随界面主题、展开项自动向下生长
+- 🖱️ **拖拽 + 角缩放**：单圆弧缩放手柄（面板在左半边则手柄在右下角，反之左下角）
+- 💾 位置/尺寸/最小化/关闭状态记忆（localStorage）
+
+> 会话相关三行（本次花销、Token、任务）反映**最近活跃的会话**——即你正在输入的那个会话。
+
+## 目录结构
+
+```text
+deepseek-balance-glass-panel/
+├── package.json          # DSH bundle 插件元数据
+├── cordis.patch.yml      # 插件挂载声明
+├── README.md             # 本文件
+├── AGENT.md              # 面向 AI 编码助手的维护/开发指南
+└── lib/
+    └── index.js          # 宿主侧插件本体（含内嵌客户端 widget.js）
+```
+
+## 安装
+
+### 方式 A：本地安装
+
+把整个 `deepseek-balance-glass-panel/` 目录拷给对方，然后在对方机器上：
+
+```powershell
+dsh plugin --profile web add link:<deepseek-balance-glass-panel 目录的绝对路径>
+```
+
+例如目录放在 `D:\plugins\deepseek-balance-glass-panel`：
+
+```powershell
+dsh plugin --profile web add link:D:\plugins\deepseek-balance-glass-panel
+```
+
+安装完成后重启 `dsh web`，再刷新浏览器（F5）即可看到右下角面板。
+
+### 方式 B：发布至 npm 后安装
+
+```powershell
+cd deepseek-balance-glass-panel
+npm publish
+```
+
+对方任意机器上：
+
+```powershell
+dsh plugin --profile web add deepseek-balance-glass-panel
+```
+
+## 卸载
+
+```powershell
+dsh plugin --profile web remove deepseek-balance-glass-panel
+```
+
+## 凭据
+
+- **余额**：需要 `DEEPSEEK_API_KEY`（在 DSH 凭据服务中配置），用于 `api.deepseek.com/user/balance`
+- **今日花销**：无需额外令牌，复用上面的余额密钥做差值记账
+
+## 验证
+
+```powershell
+dsh --profile web --dump-config | Select-String -Pattern "glass"
+
+curl http://127.0.0.1:3080/dsh-glass/stats.json
+curl http://127.0.0.1:3080/dsh-glass/widget.js
+```
+
+- `/dsh-glass/stats.json` → 200，返回 `{"balance":{...},"today":{...},"spend":{...},"tokens":{...},"task":...,"isPeak":...}`
+- `/dsh-glass/widget.js` → 200，`application/javascript`
+- 浏览器 F5 后右下角出现玻璃面板
+
+## 常见问题
+
+- **面板不出现**：确认 `dsh plugin add` 成功；`dsh --profile web --dump-config` 能看到 `deepseek-balance-glass-panel`；重启 `dsh web` 后 F5。
+- **余额报「未配置 DEEPSEEK_API_KEY」**：去 DSH 配置凭据。
+- **今日花销为 0 或从 0 开始**：余额记账法需要先完成一次余额观测（30 秒内自动完成），之后消费才会累积；跨天后自动从 0 重新计。
+- **会话三行显示「—」**：当前还没有活跃会话事件；随便说一句话后即可看到。
+- **本地开发改了代码不生效**：`link:` 安装时改源码后重启 `dsh web`（ESM 模块缓存）；已发布版本需 `npm publish` 新版本后 `dsh plugin --profile web update deepseek-balance-glass-panel`。
