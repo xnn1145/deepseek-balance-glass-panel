@@ -1,6 +1,6 @@
 {
   "name": "deepseek-balance-glass-panel",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "DSH Web 界面浮动毛玻璃面板：DeepSeek 余额、今日/本次会话花销（峰谷拆分）、Token 用量与当前任务",
   "keywords": [
     "dsh",

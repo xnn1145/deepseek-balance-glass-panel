@@ -27,7 +27,7 @@
 - 会话花销按**投影 tokenUsage 全量计价**：事件累计只覆盖插件加载后的近端事件，峰谷比例取事件、总额取投影（权威全量），避免压缩/重启后低估。
 - 记账种子：启动时优先读 `~/.dsh/.dshw-usage.json`（小鲸鱼挂件），若其 `date === 今天` 则接续 `todayUsage`；否则读自己的 `.dsh-glass-usage.json`；都没有则从 0 开始。**两个文件彼此独立写入，不会互相覆盖**。
 - 会话统计：`ctx.on('session/event', ...)` 按会话维护 `(turn:step)` 折叠 usage（复刻 token-meter 的 replace 语义，避免重复计数），并维护兜底 `currentSid`。`todo/write` 事件持久记录最新清单到 `e.todos`（**不要**依赖 `todos` 投影——它会在下一个 `turn/start` 被清空成 null）。`applyEvent(e, event, sid)` 的今日桶（每会话与 `globalToday`）只**向前**滚动（`day > key` 才清空重建），冷读重放昨日事件不会污染今日。
-- 峰谷定价 `PRICE = { hit:[0.05,0.1], miss:[1.5,3.0], out:[4.5,9.0] }`（元/百万 token，[空闲,高峰]），高峰时段 `PEAK_HOURS = [[9,12],[14,18]]`（北京时间）。DeepSeek 调价时改这里。
+- 峰谷定价 `PRICE = { hit:[0.05,0.1], miss:[1.5,3.0], out:[4.5,9.0] }`（元/百万 token，[空闲,高峰]），高峰时段 `PEAK_HOURS = [[9,12],[14,18]]`（北京时间）。**官方峰谷规则调整（2026-08-23 00:00 北京时间起）**：周末（周六/周日）全天不再区分峰谷，统一按低谷（空闲）价——`isPeakTime` 里 `WEEKEND_FLAT_START_MS` 之前（含）的周六/周日仍按工作日峰谷计费，之后（含）的周末全天返回 false（低谷）。DeepSeek 调价时改 `PRICE`，改时段/周末规则改 `PEAK_HOURS` / `WEEKEND_FLAT_START_MS` / `isBeijingWeekend`。
 - **自定义价格**：客户端右上角齿轮菜单把 输入/命中/输出 价格与高峰倍率存进 `localStorage['deepseek-balance-glass-panel-v1'].prices`，每次请求在 query 里带 `hit/miss/out/peak`；宿主用 `parsePriceParams(url)` 解析（非法值/缺省回落官方价，`peak` 把高峰列改为 闲时×倍率）后传入 `getStats(force, price, sid)` → `snapshotStats(sid, e, price)`。**兜底快照存 token 桶（buckets/todayBuckets）而非算好的金额**，重启兜底时按当时价格重算，保证改了价格后各处金额一致。
 - `hasLive` 判断**必须按 token 总量 > 0 或 todos/task 存在**，不能只看 `stats.tokens` 是否 truthy——重启后空会话的 tokens 是 `{0,0,0,0}` 对象（truthy），会把文件里的好快照覆盖成零快照。
 
