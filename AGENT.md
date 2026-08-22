@@ -22,9 +22,13 @@
 - 所有副作用都要登记到 `disposers`，最后由 `ctx.effect(() => () => disposers.forEach(d => d()))` 回收：`webServer.register`、`webServer.tapIndex`、`ctx.on('session/event', ...)` 的返回值都是 disposer。
 - 余额：`ctx.credentials.resolve('DEEPSEEK_API_KEY')` → `cred.value`；`fetch(BALANCE_URL, { headers: { Authorization: 'Bearer ' + cred.value }, signal: AbortSignal.timeout(20000) })`。失败时回退 `ledger.lastBalance` 并带 error 提示。
 - 今日花销 = **余额差值记账**：`applyLedger(current)` 在每次成功观测后执行——同日余额下降则 `todayUsage += 差值`；跨天（`todayDateStr()` 变）则归零重开。持久化到 `~/.dsh/.dsh-glass-usage.json`。
+- 最近活跃会话：每次 `session/event` 把 `sid` 写入 `~/.dsh/.dsh-glass-state.json`（10 秒节流）；**插件重启后从这里恢复 `currentSid`**，配合 `sync()` 冷读/投影，让会话花销、tokens、任务在重启后不归零。
+- 会话花销按**投影 tokenUsage 全量计价**：事件累计只覆盖插件加载后的近端事件，峰谷比例取事件、总额取投影（权威全量），避免压缩/重启后低估。
 - 记账种子：启动时优先读 `~/.dsh/.dshw-usage.json`（小鲸鱼挂件），若其 `date === 今天` 则接续 `todayUsage`；否则读自己的 `.dsh-glass-usage.json`；都没有则从 0 开始。**两个文件彼此独立写入，不会互相覆盖**。
 - 会话统计：`ctx.on('session/event', ...)` 维护「最近活跃会话」`currentSid`，并按 `(turn:step)` 折叠 usage（复刻 token-meter 的 replace 语义，避免重复计数）。`todo/write` 事件持久记录最新清单到 `e.todos`（**不要**依赖 `todos` 投影——它会在下一个 `turn/start` 被清空成 null）。
 - 峰谷定价 `PRICE = { hit:[0.05,0.1], miss:[1.5,3.0], out:[4.5,9.0] }`（元/百万 token，[空闲,高峰]），高峰时段 `PEAK_HOURS = [[9,12],[14,18]]`（北京时间）。DeepSeek 调价时改这里。
+- **自定义价格**：客户端右上角齿轮菜单把 输入/命中/输出 价格与高峰倍率存进 `localStorage['deepseek-balance-glass-panel-v1'].prices`，每次请求在 query 里带 `hit/miss/out/peak`；宿主用 `parsePriceParams(url)` 解析（非法值/缺省回落官方价，`peak` 把高峰列改为 闲时×倍率）后传入 `getStats(force, price)` → `snapshotStats(sid, e, price)`。**兜底快照存 token 桶（buckets/todayBuckets）而非算好的金额**，重启兜底时按当时价格重算，保证改了价格后各处金额一致。
+- `hasLive` 判断**必须按 token 总量 > 0 或 todos/task 存在**，不能只看 `stats.tokens` 是否 truthy——重启后空会话的 tokens 是 `{0,0,0,0}` 对象（truthy），会把文件里的好快照覆盖成零快照。
 
 ## 客户端半（WIDGET_JS）的关键约定
 
@@ -32,7 +36,8 @@
 - CSS 用字符串数组 `[...].join('\\n')` 组织（外层模板字符串把 `\\n` 解码成浏览器可用的 `'\n'`）。**改 CSS/正则时务必保持双反斜杠**，否则外层模板字符串会二次转义导致浏览器脚本损坏。
 - 面板结构一次 `h()` 构建，动态值用保存的引用在 `render()` 里更新 `textContent`；展开/收起、主题、最小化、关闭都走 `applyPos/applyTheme/applyVisibility/render` 统一刷新。
 - 状态记忆 key：`localStorage['deepseek-balance-glass-panel-v1']`。
-- 数据端点：`GET /dsh-glass/stats.json`（5 秒轮询，`?refresh=1` 强制刷新余额缓存）。
+- 数据端点：`GET /dsh-glass/stats.json`（5 秒轮询，始终带 `?hit=&miss=&out=&peak=` 价格参数，`refresh=1` 强制刷新余额缓存）。
+- **价格菜单撑大面板**：`.gp-menu` 是绝对定位、不参与父容器高度，而 `.gp-root` 有 `overflow:hidden`，所以菜单弹出时 `applyPos` 必须显式把面板撑到 `menuBox.offsetHeight/Width + 边距`（高度 auto + minHeight、宽度不小于 菜单宽+26），关闭后缩回 `state.size`。**`render()` 里 `applyVisibility` 必须先于 `applyPos`**，否则量到的 offset 还是 0（display:none）。
 - 深浅主题：监听 `document.body` 的 `data-ds-dark-theme` 属性（MutationObserver）。
 
 ## 修改后如何自检（不重启当前 DSH）
