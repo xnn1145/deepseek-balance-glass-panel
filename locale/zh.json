@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DeepSeek 余额面板",
+    "description": "在 DSH 界面右下角显示 DeepSeek 余额、今日/本次会话花销（峰谷拆分）、Token 用量与当前任务。"
+  }
+}

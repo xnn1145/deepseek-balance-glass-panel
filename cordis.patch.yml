@@ -1,11 +1,15 @@
 # ============================================================================
 # deepseek-balance-glass-panel —— DSH bundle patch（挂载声明）
 # ============================================================================
-# DSH 启动时按 bundle 层栈叠加各插件 patch，本文件把玻璃余额面板插入 Web profile。
+# DSH 启动时按 bundle 层栈叠加各插件 patch，本文件把玻璃余额面板插入当前 profile。
 #
-# 安装方式：
-#   本地开发： dsh plugin --profile web add link:<本目录绝对路径>
-#   发布后：   dsh plugin --profile web add deepseek-balance-glass-panel
+# 安装方式（profile 必须与运行端一致）：
+#   DSH Desktop：由桌面应用独占管理 desktop profile，使用「设置 → 插件」或 plugin_manager 安装本目录绝对路径
+#   dsh web    ：dsh plugin --profile web add link:<本目录绝对路径>
+#   发布后     ：dsh plugin --profile web add deepseek-balance-glass-panel
+#
+# 注意：桌面端默认加载 desktop profile，装到 web profile 不会在桌面端出现；
+#       普通 dsh plugin --profile desktop 会被“managed exclusively by the Electron application”拒绝。
 # ============================================================================
 
 - insert:

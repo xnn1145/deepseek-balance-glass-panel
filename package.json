@@ -1,7 +1,7 @@
 {
   "name": "deepseek-balance-glass-panel",
-  "version": "0.3.2",
-  "description": "DSH Web 界面浮动毛玻璃面板：DeepSeek 余额、今日/本次会话花销（峰谷拆分）、Token 用量与当前任务",
+  "version": "0.4.1",
+  "description": "DSH Web/Desktop 界面浮动毛玻璃面板：DeepSeek 余额、今日/本次会话花销（峰谷拆分）、Token 用量与当前任务",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -12,12 +12,24 @@
   ],
   "type": "module",
   "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
   "files": [
     "lib",
     "cordis.patch.yml",
     "README.md",
-    "AGENT.md"
+    "AGENT.md",
+    "locale/*.json",
+    "icon.svg"
   ],
+  "scripts": {
+    "check": "node --check lib/index.js",
+    "test": "node test/pricing.test.mjs"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

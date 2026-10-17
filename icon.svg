@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DeepSeek Balance Panel">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef4ff"/>
+      <stop offset="0.55" stop-color="#cfe0ff"/>
+      <stop offset="1" stop-color="#a9c6ff"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4d8dff"/>
+      <stop offset="1" stop-color="#1f57d6"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="15" fill="url(#glass)" stroke="#8fb3ff" stroke-width="2"/>
+  <rect x="12" y="15" width="40" height="6" rx="3" fill="#ffffff" opacity="0.85"/>
+  <rect x="12" y="26" width="40" height="6" rx="3" fill="#ffffff" opacity="0.7"/>
+  <rect x="12" y="37" width="24" height="6" rx="3" fill="#ffffff" opacity="0.55"/>
+  <circle cx="44" cy="43" r="12" fill="url(#coin)"/>
+  <path d="M38 38h12M44 34v18M40 46h8" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

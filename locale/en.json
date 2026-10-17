@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DeepSeek Balance Panel",
+    "description": "A floating glass panel showing DeepSeek balance, today/session cost split by peak and idle pricing, token usage, and the current task."
+  }
+}
